@@ -21,12 +21,10 @@ To encode a string, do the following:
 ```rust
 extern crate urlencoding;
 
-use urlencoding::UrlEncoder;
+use urlencoding::encode;
 
 fn main() {
-  let encoder = UrlEncoder::new();
-
-  let encoded = encoder.encode("This string will be URL encoded.");
+  let encoded = encode("This string will be URL encoded.");
   // This%20string%20will%20be%20URL%20encoded.
 }
 ```
