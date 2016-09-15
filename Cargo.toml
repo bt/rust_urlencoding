@@ -1,0 +1,6 @@
+[package]
+name = "urlencoding"
+version = "0.1.0"
+authors = ["Bertram Truong <b@bertramtruong.com>"]
+
+[dependencies]
