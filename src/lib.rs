@@ -1,11 +1,11 @@
 pub struct UrlEncoder {}
 
 impl UrlEncoder {
-    fn new() -> UrlEncoder {
+    pub fn new() -> UrlEncoder {
         UrlEncoder {}
     }
 
-    fn encode(&self, data: &str) -> String {
+    pub fn encode(&self, data: &str) -> String {
         let mut escaped = String::new();
         for b in data.as_bytes().iter() {
             match *b as char {
@@ -23,11 +23,11 @@ impl UrlEncoder {
 pub struct UrlDecoder {}
 
 impl UrlDecoder {
-    fn new() -> UrlDecoder {
+    pub fn new() -> UrlDecoder {
         UrlDecoder {}
     }
 
-    fn decode(&self, data: &str) -> String {
+    pub fn decode(&self, data: &str) -> String {
         unimplemented!();
     }
 }
