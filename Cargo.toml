@@ -2,5 +2,9 @@
 name = "urlencoding"
 version = "0.1.0"
 authors = ["Bertram Truong <b@bertramtruong.com>"]
+license = "MIT"
+description = "A Rust library for doing URL percentage encoding."
+repository = "https://github.com/bt/rust_urlencoding"
+keywords = ["url", "encoding", "urlencoding"]
 
 [dependencies]
