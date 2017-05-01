@@ -18,56 +18,76 @@ pub fn encode(data: &str) -> String {
 pub fn decode(data: &str) -> Result<String, FromUrlEncodingError> {
     let mut unescaped_bytes: Vec<u8> = Vec::new();
     let mut bytes = data.bytes();
-    let mut bad_input: Option<u8> = None;
-    let mut bytes_to_decode: [u8; 2] = [0, 0];
-    let mut byte_being_read = 0;
+    validate_urlencoded_str(data)?;
+    // If validate_urlencoded_str returned Ok, then we know:
+    // * the input data contains only valid ascii characters
+    // * every '%' is followed by 2 hex characters
     while let Some(b) = bytes.next() {
         match b as char {
             'A'...'Z' | 'a'...'z' | '0'...'9' | '-' | '_' | '.' | '~' => unescaped_bytes.push(b),
             '%' => {
-                while byte_being_read < 2 {
-                    if let Some(b) = bytes.next() {
-                        bytes_to_decode[byte_being_read] = b;
-                        byte_being_read += 1;
-                    } else {
-                        return Err(FromUrlEncodingError::UriCharacterError {
-                            byte: b,
-                        })
-                    }
-                }
-                let hex_str = str::from_utf8(&bytes_to_decode).unwrap();
-                if byte_being_read < 2 {
-                    bad_input = Some(b);
-                    break;
-                }
+                let bytes_to_decode = &[bytes.next().unwrap(), bytes.next().unwrap()];
+                let hex_str = str::from_utf8(bytes_to_decode).unwrap();
                 unescaped_bytes.push(u8::from_str_radix(hex_str, 16).unwrap());
-                byte_being_read = 0;
             },
             _ => {
-                bad_input = Some(b);
+                // Something went wrong; return decoded string up to this point
                 break;
             }
         }
     }
-    match bad_input {
-        Some(bad_byte) =>
-            Err(FromUrlEncodingError::UriCharacterError {
-                byte: bad_byte,
-            }),
-        None =>
-            match String::from_utf8(unescaped_bytes) {
-                Err(e) =>
-                    Err(FromUrlEncodingError::Utf8CharacterError {
-                        error: e,
-                    }),
-                Ok(s) => Ok(s),
+    String::from_utf8(unescaped_bytes).or_else(|e| Err(FromUrlEncodingError::Utf8CharacterError {
+        error: e,
+    }))
+}
+
+// Validates the provided string contains only RFC 3986 Unreserved Characters
+// and '%' characters, and every '%' character is followed by exactly 2 hex
+// digits.
+fn validate_urlencoded_str(data: &str) -> Result<(), FromUrlEncodingError> {
+    let mut iter = data.char_indices();
+    while let Some((idx, chr)) = iter.next() {
+        match chr {
+            'A'...'Z' | 'a'...'z' | '0'...'9' | '-' | '_' | '.' | '~' =>
+                continue,
+            '%' => {
+                validate_percent_encoding(&mut iter, idx)?;
             },
-   }
+            _ => return Err(FromUrlEncodingError::UriCharacterError {
+                character: chr,
+                index: idx,
+            }),
+        }
+    }
+    Ok(())
+}
+
+// Validates the next two characters returned by the provided iterator are
+// hexadecimal digits.
+fn validate_percent_encoding(iter: &mut str::CharIndices, current_idx: usize) -> Result<(), FromUrlEncodingError> {
+    for _ in 0..2 {
+        match iter.next() {
+            // Only hex digits are valid
+            Some((_, c)) if c.is_digit(16) => {
+                continue
+            },
+            Some((i, c)) => return Err(FromUrlEncodingError::UriCharacterError {
+                character: c,
+                index: i,
+            }),
+            // We got a '%' without 2 characters after it, so mark the '%' as bad
+            None => return Err(FromUrlEncodingError::UriCharacterError {
+                character: '%',
+                index: current_idx,
+            }),
+        }
+    }
+    Ok(())
 }
 
 #[derive(Debug)]
 pub enum FromUrlEncodingError {
-    UriCharacterError { byte: u8 },
+    UriCharacterError { character: char, index: usize },
     Utf8CharacterError { error: FromUtf8Error },
 }
 
@@ -107,11 +127,59 @@ mod tests {
     #[test]
     fn it_decodes_unsuccessfully_emoji() {
         let bad_encoded_string = "👾 Exterminate!";
-        let expected: u8 = 0xF0;
+        let expected_idx: usize = 0;
+        let expected_char: char = '👾';
 
         match decode(bad_encoded_string).unwrap_err() {
-            FromUrlEncodingError::UriCharacterError { byte: b } =>
-                assert_eq!(expected, b),
+            FromUrlEncodingError::UriCharacterError { index: i, character: c } => {
+                assert_eq!(expected_idx, i);
+                assert_eq!(expected_char, c)
+            },
+            _ => panic!()
+        }
+    }
+
+    #[test]
+    fn it_decodes_unsuccessfuly_bad_percent_01() {
+        let bad_encoded_string = "this%2that";
+        let expected_idx = 6;
+        let expected_char = 't';
+
+        match decode(bad_encoded_string).unwrap_err() {
+            FromUrlEncodingError::UriCharacterError { index: i, character: c } => {
+                assert_eq!(expected_idx, i);
+                assert_eq!(expected_char, c)
+            },
+            _ => panic!()
+        }
+    }
+
+    #[test]
+    fn it_decodes_unsuccessfuly_bad_percent_02() {
+        let bad_encoded_string = "this%20that%";
+        let expected_idx = 11;
+        let expected_char = '%';
+
+        match decode(bad_encoded_string).unwrap_err() {
+            FromUrlEncodingError::UriCharacterError { index: i, character: c } => {
+                assert_eq!(expected_idx, i);
+                assert_eq!(expected_char, c)
+            },
+            _ => panic!()
+        }
+    }
+
+    #[test]
+    fn it_decodes_unsuccessfuly_bad_percent_03() {
+        let bad_encoded_string = "this%20that%2";
+        let expected_idx = 11;
+        let expected_char = '%';
+
+        match decode(bad_encoded_string).unwrap_err() {
+            FromUrlEncodingError::UriCharacterError { index: i, character: c } => {
+                assert_eq!(expected_idx, i);
+                assert_eq!(expected_char, c)
+            },
             _ => panic!()
         }
     }
