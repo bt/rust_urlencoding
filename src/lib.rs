@@ -20,19 +20,17 @@ pub fn decode(data: &str) -> Result<String, FromUrlEncodingError> {
     let mut bytes = data.bytes();
     validate_urlencoded_str(data)?;
     // If validate_urlencoded_str returned Ok, then we know:
-    // * the input data contains only valid ascii characters
     // * every '%' is followed by 2 hex characters
     while let Some(b) = bytes.next() {
         match b as char {
-            'A'...'Z' | 'a'...'z' | '0'...'9' | '-' | '_' | '.' | '~' => unescaped_bytes.push(b),
             '%' => {
                 let bytes_to_decode = &[bytes.next().unwrap(), bytes.next().unwrap()];
                 let hex_str = str::from_utf8(bytes_to_decode).unwrap();
                 unescaped_bytes.push(u8::from_str_radix(hex_str, 16).unwrap());
             },
             _ => {
-                // Something went wrong; return decoded string up to this point
-                break;
+                // Assume whoever did the encoding intended what we got
+                unescaped_bytes.push(b);
             }
         }
     }
@@ -41,22 +39,16 @@ pub fn decode(data: &str) -> Result<String, FromUrlEncodingError> {
     }))
 }
 
-// Validates the provided string contains only RFC 3986 Unreserved Characters
-// and '%' characters, and every '%' character is followed by exactly 2 hex
+// Validates every '%' character is followed by exactly 2 hex
 // digits.
 fn validate_urlencoded_str(data: &str) -> Result<(), FromUrlEncodingError> {
     let mut iter = data.char_indices();
     while let Some((idx, chr)) = iter.next() {
         match chr {
-            'A'...'Z' | 'a'...'z' | '0'...'9' | '-' | '_' | '.' | '~' =>
-                continue,
             '%' => {
                 validate_percent_encoding(&mut iter, idx)?;
             },
-            _ => return Err(FromUrlEncodingError::UriCharacterError {
-                character: chr,
-                index: idx,
-            }),
+            _ => continue,
         }
     }
     Ok(())
@@ -127,16 +119,8 @@ mod tests {
     #[test]
     fn it_decodes_unsuccessfully_emoji() {
         let bad_encoded_string = "👾 Exterminate!";
-        let expected_idx: usize = 0;
-        let expected_char: char = '👾';
 
-        match decode(bad_encoded_string).unwrap_err() {
-            FromUrlEncodingError::UriCharacterError { index: i, character: c } => {
-                assert_eq!(expected_idx, i);
-                assert_eq!(expected_char, c)
-            },
-            _ => panic!()
-        }
+        assert_eq!(bad_encoded_string, decode(bad_encoded_string).unwrap());
     }
 
     #[test]
