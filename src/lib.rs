@@ -16,11 +16,11 @@ pub fn encode(data: &str) -> String {
 }
 
 pub fn decode(data: &str) -> Result<String, FromUrlEncodingError> {
+    validate_urlencoded_str(data)?;
     let mut unescaped_bytes: Vec<u8> = Vec::new();
     let mut bytes = data.bytes();
-    validate_urlencoded_str(data)?;
-    // If validate_urlencoded_str returned Ok, then we know:
-    // * every '%' is followed by 2 hex characters
+    // If validate_urlencoded_str returned Ok, then we know
+    // every '%' is followed by 2 hex characters
     while let Some(b) = bytes.next() {
         match b as char {
             '%' => {
