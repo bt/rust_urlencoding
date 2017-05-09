@@ -10,7 +10,7 @@ Installation
 This crate can be downloaded through Cargo. To do so, add the following line to your `Cargo.toml` file, under `dependencies`:
 
 ```toml
-urlencoding = "0.3"
+urlencoding = "1.0.0"
 ```
 
 Usage
