@@ -10,7 +10,7 @@ Installation
 This crate can be downloaded through Cargo. To do so, add the following line to your `Cargo.toml` file, under `dependencies`:
 
 ```toml
-urlencoding = "0.2"
+urlencoding = "0.3"
 ```
 
 Usage
@@ -25,8 +25,26 @@ use urlencoding::encode;
 
 fn main() {
   let encoded = encode("This string will be URL encoded.");
+  println!("{}", encoded);
   // This%20string%20will%20be%20URL%20encoded.
 }
 ```
 
-Decoding is pending implementation.
+To decode a string, it's only slightly different:
+
+```rust
+extern crate urlencoding;
+
+use urlencoding::decode;
+
+fn main() {
+  let decoded = decode("%F0%9F%91%BE%20Exterminate%21");
+  println!("{}", decoded.unwrap());
+  // 👾 Exterminate!
+}
+```
+
+License
+=======
+
+This project is licensed under the MIT license, Copyright (c) 2017 Bertram Truong. For more information see the `LICENSE` file.
