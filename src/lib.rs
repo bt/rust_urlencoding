@@ -1,5 +1,7 @@
 use std::str;
 use std::string::FromUtf8Error;
+use std::error::Error;
+use std::fmt::{self, Display};
 
 pub fn encode(data: &str) -> String {
     let mut escaped = String::new();
@@ -81,6 +83,33 @@ fn validate_percent_encoding(iter: &mut str::CharIndices, current_idx: usize) ->
 pub enum FromUrlEncodingError {
     UriCharacterError { character: char, index: usize },
     Utf8CharacterError { error: FromUtf8Error },
+}
+
+impl Error for FromUrlEncodingError {
+    fn description(&self) -> &str {
+        match self {
+            &FromUrlEncodingError::UriCharacterError {character: _, index: _} => "invalid URI char",
+            &FromUrlEncodingError::Utf8CharacterError {error: _} => "invalid utf8 char"
+        }
+    }
+
+    fn cause(&self) -> Option<&Error> {
+        match self {
+            &FromUrlEncodingError::UriCharacterError {character: _, index: _} => None,
+            &FromUrlEncodingError::Utf8CharacterError {ref error} => Some(error)
+        }
+    }
+}
+
+impl Display for FromUrlEncodingError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        match self {
+            &FromUrlEncodingError::UriCharacterError {character, index} =>
+                write!(f, "invalid URI char [{}] at [{}]", character, index),
+            &FromUrlEncodingError::Utf8CharacterError {ref error} =>
+                write!(f, "invalid utf8 char: {}", error)
+        }
+    }
 }
 
 #[cfg(test)]
