@@ -1,6 +1,6 @@
 [package]
 name = "urlencoding"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["Bertram Truong <b@bertramtruong.com>"]
 license = "MIT"
 description = "A Rust library for doing URL percentage encoding."
@@ -8,3 +8,7 @@ repository = "https://github.com/bt/rust_urlencoding"
 keywords = ["url", "encoding", "urlencoding"]
 
 [dependencies]
+
+[features]
+default = ["use_std"]
+use_std = []
