@@ -10,7 +10,7 @@ Installation
 This crate can be downloaded through Cargo. To do so, add the following line to your `Cargo.toml` file, under `dependencies`:
 
 ```toml
-urlencoding = "1.0.0"
+urlencoding = "1.0.1"
 ```
 
 Usage
@@ -42,6 +42,12 @@ fn main() {
   println!("{}", decoded.unwrap());
   // 👾 Exterminate!
 }
+```
+
+To use it in `no_std` environment, do the following in Cargo.toml:
+
+```
+urlencoding = { version = "1.0.1", default-features = false }
 ```
 
 License

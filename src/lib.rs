@@ -1,7 +1,19 @@
+#![cfg_attr(not(feature = "use_std"), no_std)]
+#![cfg_attr(not(feature = "use_std"), feature(alloc))]
+
+#[cfg(not(feature = "use_std"))]
+#[macro_use]
+extern crate alloc as std;
+
+#[cfg(not(feature = "use_std"))]
+use std::prelude::*;
+
 use std::str;
 use std::string::FromUtf8Error;
-use std::error::Error;
+#[cfg(feature = "use_std")]
 use std::fmt::{self, Display};
+#[cfg(feature = "use_std")]
+use std::error::Error;
 
 pub fn encode(data: &str) -> String {
     let mut escaped = String::new();
@@ -85,6 +97,7 @@ pub enum FromUrlEncodingError {
     Utf8CharacterError { error: FromUtf8Error },
 }
 
+#[cfg(feature = "use_std")]
 impl Error for FromUrlEncodingError {
     fn description(&self) -> &str {
         match self {
@@ -101,6 +114,7 @@ impl Error for FromUrlEncodingError {
     }
 }
 
+#[cfg(feature = "use_std")]
 impl Display for FromUrlEncodingError {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match self {
