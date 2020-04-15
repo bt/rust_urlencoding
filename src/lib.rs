@@ -4,7 +4,7 @@ use std::error::Error;
 use std::fmt::{self, Display};
 
 pub fn encode(data: &str) -> String {
-    let mut escaped = String::new();
+    let mut escaped = String::with_capacity(data.len());
     for b in data.as_bytes().iter() {
         match *b as char {
             // Accepted characters
